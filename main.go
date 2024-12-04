@@ -34,15 +34,14 @@ func CreateOne(c echo.Context) error {
 }
 
 func CreateBulk(c echo.Context) error {
+
   var networks []Interfaces.ONet
+  
   if err := c.Bind(&networks); err != nil {
     return c.NoContent(400)
   }
   Orchestrator.CreateBulk(networks)
   	return c.NoContent(204)
-  if err := c.Bind(&networks); err != nil {
-    return c.NoContent(400)
-  }
 }
 
 func ReadOne(c echo.Context) error {
