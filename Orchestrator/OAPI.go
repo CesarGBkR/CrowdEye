@@ -28,8 +28,10 @@ func ReadAll() ([]Interfaces.ONet, error) {
   return res, err
 }
 
-func UpdateOne(network Interfaces.ONet)  {
-  Controllers.UpdateOne(network)
+func UpdateOne(network Interfaces.ONet) (Interfaces.ONet, error) {
+  res, err := Controllers.UpdateOne(network)
+  return res, err
+
 }
 
 func UpdateBulk(networks []Interfaces.ONet)  {
