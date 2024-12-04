@@ -1,38 +1,44 @@
 package Controllers
 
 import (
-  "fmt"
 
+  "CrowdEye/Interfaces"
   "github.com/vishvananda/netlink"
 )
 
-func getInterfaces() error {
+func GetInterfaces() ([]Interfaces.Network, error) {
+  var Networks []Interfaces.Network
   links, err := netlink.LinkList()
   if err != nil {
-    return err
+    return Networks, err
   }
-  fmt.Prinln("Interfaces: ")
+  // Constructor
+
   for _, link := range links {
-    fmt.Printf("\n Name: %s    Tipo: %s", link.Attrs().Name, link.Type())
+    Network := &Interfaces.Network {
+      Name: link.Attrs().Name,
+      Type: link.Type(), 
+    } 
+    Networks = append(Networks, *Network)
   }
-  return nil
+  return Networks, nil
 }
 
-func monitorMode(interfaceName string) error {
-  link, err := netlink.LinkByname(interfaceName)
+func MonitorMode(interfaceName string) error {
+  link, err := netlink.LinkByName(interfaceName)
   if err != nil {
     return err
   }
-  if err := netlink.LinkSetDown(link) err != nil {
+  if err := netlink.LinkSetDown(link); err != nil {
     return err
   }
 
-  err = netlink.LinkSetType(link, "monitor")
-  if err != nil {
-    return err
-  }
+  // err = netlink.LinkSetType(link, "monitor")
+  // if err != nil {
+  //   return err
+  // }
 
-  if err := netlink.LinkSetUo(link) err != nil {
+  if err := netlink.LinkSetUp(link); err != nil {
     return err
   }
   return nil

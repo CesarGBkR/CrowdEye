@@ -45,8 +45,8 @@ func CreateBulk(c echo.Context) error {
 }
 
 func ReadOne(c echo.Context) error {
-  network1 := new(Interfaces.ONet)
-    Orchestrator.ReadOne(*network1)
+  // network1 := new(Interfaces.ONet)
+    // Orchestrator.ReadOne(*network1)
   	return c.NoContent(204)
 }
 
@@ -70,9 +70,9 @@ func UpdateOne(c echo.Context) error {
 
 func UpdateBulk(c echo.Context) error {
   var networks []Interfaces.ONet  
-  network1 := new(Interfaces.ONet)
-  network2 := new(Interfaces.ONet)
-  networks = append(networks, *network1, *network2)
+  if err := c.Bind(&networks); err != nil {
+    return c.NoContent(400)
+  }
   Orchestrator.UpdateBulk(networks)
   	return c.NoContent(204)
 }
@@ -85,14 +85,26 @@ func DeleteOne(c echo.Context) error {
 
 func DeleteBulk(c echo.Context) error {
   var networks []Interfaces.ONet
-  network1 := new(Interfaces.ONet)
-  network2 := new(Interfaces.ONet)
-  networks = append(networks, *network1, *network2)
-
+  if err := c.Bind(&networks); err != nil {
+    return c.NoContent(400)
+  }  
   Orchestrator.DeleteBulk(networks)
   return c.NoContent(204)
 }
 
+func GetInterfaces(c echo.Context) error {
+  var networks []Interfaces.Network
+  res, err := Orchestrator.GetInterfaces() 
+  if err := c.Bind(&networks); err != nil {
+    return c.NoContent(400)
+  }
+  if err != nil {
+    return c.NoContent(500)
+  }
+  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+  c.Response().WriteHeader(http.StatusOK)
+  return json.NewEncoder(c.Response()).Encode(res)
+}
 
 
 func main() {
@@ -114,7 +126,8 @@ func main() {
     })
   })
   
-    // Routes
+  // Routes
+    //CRUD
 
   e.POST("/v1/CreateOne", CreateOne)
   e.POST("/v1/CreateBulk", CreateBulk)
@@ -124,6 +137,9 @@ func main() {
   //e.GET("/v1/ReadAll", ReadAll)
   
   e.PUT("/v1/Update", UpdateOne)
+
+    // Interface MNGMNT
+  e.GET("/v1/GetInterfaces", GetInterfaces)
   // Server Starter
   e.Logger.Fatal(e.Start(":3333"))	
 }

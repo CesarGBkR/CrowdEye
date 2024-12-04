@@ -72,66 +72,66 @@ func CreateBulk(networks []Interfaces.ONet) []error {
   return errors
 }
 
-func ReadBy(network Interfaces.ONet)  {
- db, err := ConnectDB()
-  if err != nil {
-    return res, err
-  }
-  defer db.Close()
-  q := `SELECT * 
-FROM networks n
-LEFT JOIN netsecurity ns
-ON n.netid = ns.netid
-WHERE ns.netid > 1 
-AND n.netid > 1
-ORDER BY n.netid DESC;`
-  rows, err := db.Query(q)
-  if err != nil {
-    return res, err
-  }
-  defer rows.Close()
-
-  for rows.Next() {
-    var (
-      netid int
-      ssid string
-      mac int
-      hidden bool
-      secid int
-      netid2 int
-      pass string
-      Type  int
-
-    )
-    if err := rows.Scan(&netid, &ssid, &mac, &hidden, &secid, &netid2, &pass, &Type); err != nil {
-      return res, err
-    }
-
-    // Constructor
-    nsec:= &Interfaces.ONetSec{
-      NetID: netid2,
-      SecID: secid,
-      Pass: pass,
-      Type: Type,
-    }
-    network := &Interfaces.ONet{
-      NetID:  netid,
-      SSID: ssid,
-      Mac: mac,
-      Hidden: hidden,
-      NetSec: *nsec, 
-    }
-
-    // Res Collector
-    res = append(res, *network)
-    
-  }
-  if !rows.NextResultSet() {
-    db.Close()
-    return res, err
-	}
-  return res, err 
-}
+// func ReadBy(network Interfaces.ONet)  {
+//  db, err := ConnectDB()
+//   if err != nil {
+//     return res, err
+//   }
+//   defer db.Close()
+//   q := `SELECT * 
+// FROM networks n
+// LEFT JOIN netsecurity ns
+// ON n.netid = ns.netid
+// WHERE ns.netid > 1 
+// AND n.netid > 1
+// ORDER BY n.netid DESC;`
+//   rows, err := db.Query(q)
+//   if err != nil {
+//     return res, err
+//   }
+//   defer rows.Close()
+//
+//   for rows.Next() {
+//     var (
+//       netid int
+//       ssid string
+//       mac int
+//       hidden bool
+//       secid int
+//       netid2 int
+//       pass string
+//       Type  int
+//
+//     )
+//     if err := rows.Scan(&netid, &ssid, &mac, &hidden, &secid, &netid2, &pass, &Type); err != nil {
+//       return res, err
+//     }
+//
+//     // Constructor
+//     nsec:= &Interfaces.ONetSec{
+//       NetID: netid2,
+//       SecID: secid,
+//       Pass: pass,
+//       Type: Type,
+//     }
+//     network := &Interfaces.ONet{
+//       NetID:  netid,
+//       SSID: ssid,
+//       Mac: mac,
+//       Hidden: hidden,
+//       NetSec: *nsec, 
+//     }
+//
+//     // Res Collector
+//     res = append(res, *network)
+//
+//   }
+//   if !rows.NextResultSet() {
+//     db.Close()
+//     return res, err
+// 	}
+//   return res, err 
+// }
 
 func ReadAll() ([]Interfaces.ONet, error) {
   var res []Interfaces.ONet
@@ -195,10 +195,11 @@ ORDER BY n.netid DESC;`
   return res, err
 }
 
-func UpdateOne(network Interfaces.ONet) {
+func UpdateOne(network Interfaces.ONet) (Interfaces.ONet, error) {
   db, err := ConnectDB()
+  res := new(Interfaces.ONet) 
   if err != nil {
-    return res, err
+    return *res, err
   }
   defer db.Close()
   q := `SELECT * 
@@ -209,7 +210,11 @@ WHERE ns.netid > 1
 AND n.netid > 1
 ORDER BY n.netid DESC;`
   rows, err := db.Query(q)
-
+  if err != nil {
+    fmt.Printf("%v", rows)
+    return *res, err
+  }
+  return *res, nil
 }
 
 func UpdateBulk(network []Interfaces.ONet) {
