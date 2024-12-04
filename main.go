@@ -29,25 +29,7 @@ func CreateOne(c echo.Context) error {
 }
 func CreateBulk(c echo.Context) error {
   var networks []Interfaces.ONet
-
-  sec := new(Interfaces.ONetSec)
-  sec.Pass = "Password123"
-  sec.Type = 1 // WPA2
-  
-  network1 := new(Interfaces.ONet)
-  network1.SSID = "Wifi1"
-  network1.Mac = 1282926237310
-  network1.Hidden = false
-  network1.NetSec = *sec
-
-  network2 := new(Interfaces.ONet)
-  network2.SSID = "Wifi2"
-  network2.Mac = 1282926237310
-  network2.Hidden = false
-  network2.NetSec = *sec
-  
-  networks = append(networks, *network1, *network2)
-    Orchestrator.CreateBulk(networks)
+    rchestrator.CreateBulk(networks)
   	return c.NoContent(204)
 }
 func ReadOne(c echo.Context) error {

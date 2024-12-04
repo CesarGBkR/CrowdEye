@@ -15,7 +15,7 @@ var (
 
 func ConnectDB() (*sql.DB, error){
   key := os.Getenv("skey")
-  uri := fmt.Sprintf("root:%s@tcp(127.0.0.1:3308)/crowdeye", key)
+  uri := fmt.Sprintf("client:%s@tcp(192.168.234.1:3308)/crowdeye?tls=false", key)
   var err error
   db, err = sql.Open("mysql", uri)
    
