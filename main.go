@@ -2,7 +2,7 @@ package main
 
 import (
   "io"
-  "fmt"
+  //"fmt"
 	"html/template"
   "net/http"
   "encoding/json"
@@ -23,35 +23,56 @@ func (t *TemplateRender) Render(w io.Writer, name string, data interface{}, c ec
 // Handlers Definition
 
 func CreateOne(c echo.Context) error {
-  network1 := new(Interfaces.ONet)
-  Orchestrator.CreateOne(*network1)
+
+  var network Interfaces.ONet
+
+  if err := c.Bind(&network); err != nil {
+    return c.NoContent(400)
+  }
+  Orchestrator.CreateOne(network)
   return c.NoContent(204)
 }
+
 func CreateBulk(c echo.Context) error {
   var networks []Interfaces.ONet
+<<<<<<< HEAD
     rchestrator.CreateBulk(networks)
   	return c.NoContent(204)
+=======
+  
+  if err := c.Bind(&networks); err != nil {
+    return c.NoContent(400)
+  }
+
+  Orchestrator.CreateBulk(networks)
+  return c.NoContent(204)
+>>>>>>> 63d6491f7a46737162734520e5a300b9ca0266ba
 }
+
 func ReadOne(c echo.Context) error {
   network1 := new(Interfaces.ONet)
     Orchestrator.ReadOne(*network1)
   	return c.NoContent(204)
 }
-func ReadBulk(c echo.Context) error {
+
+func ReadAll(c echo.Context) error {
   res, err := Orchestrator.ReadAll()
   if err != nil {
-    fmt.Printf("%v", err)
     return c.NoContent(500) 
   }
   c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
   c.Response().WriteHeader(http.StatusOK)
   return json.NewEncoder(c.Response()).Encode(res)
 }
+
 func UpdateOne(c echo.Context) error {
-  network1 := new(Interfaces.ONet)
-    Orchestrator.UpdateOne(*network1)
-  	return c.NoContent(204)
-}
+  var network Interfaces.ONet
+  if err := c.Bind(&network); err != nil {
+    return c.NoContent(400)
+  }
+  Orchestrator.UpdateOne(network)
+  return c.NoContent(204)}
+
 func UpdateBulk(c echo.Context) error {
   var networks []Interfaces.ONet  
   network1 := new(Interfaces.ONet)
@@ -60,11 +81,13 @@ func UpdateBulk(c echo.Context) error {
   Orchestrator.UpdateBulk(networks)
   	return c.NoContent(204)
 }
+
 func DeleteOne(c echo.Context) error {
   network1 := new(Interfaces.ONet)
     Orchestrator.DeleteOne(*network1)
   	return c.NoContent(204)
 }
+
 func DeleteBulk(c echo.Context) error {
   var networks []Interfaces.ONet
   network1 := new(Interfaces.ONet)
@@ -100,7 +123,12 @@ func main() {
 
   e.POST("/v1/CreateOne", CreateOne)
   e.POST("/v1/CreateBulk", CreateBulk)
-  e.GET("/v1/ReadBulk", ReadBulk)
+
+
+  e.GET("/v1/ReadAll", ReadAll)
+  //e.GET("/v1/ReadAll", ReadAll)
+  
+  e.PUT("/v1/Update", UpdateOne)
   // Server Starter
   e.Logger.Fatal(e.Start(":3333"))	
 }
