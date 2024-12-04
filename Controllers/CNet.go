@@ -1,7 +1,6 @@
 package Controllers
 
 import (
-
   "CrowdEye/Interfaces"
   "github.com/vishvananda/netlink"
 )
@@ -15,9 +14,12 @@ func GetInterfaces() ([]Interfaces.Network, error) {
   // Constructor
 
   for _, link := range links {
+    attrs := link.Attrs()
+   
     Network := &Interfaces.Network {
-      Name: link.Attrs().Name,
-      Type: link.Type(), 
+      Name: attrs.Name,
+      Mac: attrs.HardwareAddr.String(), 
+      Type: link.Type(),
     } 
     Networks = append(Networks, *Network)
   }
