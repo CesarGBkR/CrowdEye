@@ -35,18 +35,14 @@ func CreateOne(c echo.Context) error {
 
 func CreateBulk(c echo.Context) error {
   var networks []Interfaces.ONet
-<<<<<<< HEAD
     rchestrator.CreateBulk(networks)
   	return c.NoContent(204)
-=======
-  
   if err := c.Bind(&networks); err != nil {
     return c.NoContent(400)
   }
 
   Orchestrator.CreateBulk(networks)
   return c.NoContent(204)
->>>>>>> 63d6491f7a46737162734520e5a300b9ca0266ba
 }
 
 func ReadOne(c echo.Context) error {
