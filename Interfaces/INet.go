@@ -5,4 +5,5 @@ type Network struct {
   Mac string 
   Type string
   Mode string
+  State int
 }

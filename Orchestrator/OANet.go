@@ -13,3 +13,11 @@ func GetInterfaces() ([]Interfaces.Network, error) {
   }
   return res, nil
 }
+
+func MonitorMode(Network Interfaces.Network) (Interfaces.Network, error) {
+  res, err := Controllers.MonitorMode(Network)
+  if err != nil {
+    return res, err
+  }
+  return res, nil
+}

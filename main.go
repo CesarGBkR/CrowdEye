@@ -94,16 +94,33 @@ func DeleteBulk(c echo.Context) error {
 
 func GetInterfaces(c echo.Context) error {
   var networks []Interfaces.Network
-  res, err := Orchestrator.GetInterfaces() 
   if err := c.Bind(&networks); err != nil {
     return c.NoContent(400)
   }
+
+  res, err := Orchestrator.GetInterfaces() 
   if err != nil {
     return c.NoContent(500)
   }
   c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
   c.Response().WriteHeader(http.StatusOK)
   return json.NewEncoder(c.Response()).Encode(res)
+}
+
+func MonitorMode(c echo.Context) error {
+  var network Interfaces.Network
+  if err := c.Bind(&network); err != nil {
+    return c.NoContent(400)
+  }
+  res, err := Orchestrator.MonitorMode(network)
+  if err != nil {
+    return c.NoContent(500)
+  }
+
+  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+  c.Response().WriteHeader(http.StatusOK)
+  return json.NewEncoder(c.Response()).Encode(res)
+
 }
 
 
@@ -134,12 +151,13 @@ func main() {
 
 
   e.GET("/v1/ReadAll", ReadAll)
-  //e.GET("/v1/ReadAll", ReadAll)
   
   e.PUT("/v1/Update", UpdateOne)
 
     // Interface MNGMNT
   e.GET("/v1/GetInterfaces", GetInterfaces)
+  e.POST("/v1/MonitorMode", MonitorMode)
+
   // Server Starter
   e.Logger.Fatal(e.Start(":3333"))	
 }
