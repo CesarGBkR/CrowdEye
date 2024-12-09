@@ -2,7 +2,7 @@ package main
 
 import (
   "io"
-  //"fmt"
+  "fmt"
 	"html/template"
   "net/http"
   "encoding/json"
@@ -93,10 +93,6 @@ func DeleteBulk(c echo.Context) error {
 }
 
 func GetInterfaces(c echo.Context) error {
-  var networks []Interfaces.Network
-  if err := c.Bind(&networks); err != nil {
-    return c.NoContent(400)
-  }
 
   res, err := Orchestrator.GetInterfaces() 
   if err != nil {
@@ -123,6 +119,40 @@ func MonitorMode(c echo.Context) error {
 
 }
 
+func CreateScann(c echo.Context) error {
+  var network Interfaces.Network
+  if err := c.Bind(&network); err != nil {
+    return c.NoContent(400)
+  }
+  if err := Orchestrator.CreateScann(network); err != nil {
+    return c.NoContent(500)
+  }
+  return c.NoContent(204)
+}
+
+func StopScann(c echo.Context) error {
+  var ScanningInterface Interfaces.ScanningInterface
+  if err := c.Bind(&ScanningInterface); err != nil {
+    return c.NoContent(400)
+  }
+  if err := Orchestrator.StopScann(ScanningInterface); err != nil {
+    return c.NoContent(500)
+  }
+  return c.NoContent(204)
+}
+
+func GetScannProcess(c echo.Context) error {
+  res, err := Orchestrator.GetScannProcess()
+  if err != nil {
+    fmt.Printf("\n%v\n", err)
+    return c.NoContent(500)
+  }
+
+  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+  c.Response().WriteHeader(http.StatusOK)
+  return json.NewEncoder(c.Response()).Encode(res)
+
+}
 
 func main() {
   // Foo
@@ -157,6 +187,10 @@ func main() {
     // Interface MNGMNT
   e.GET("/v1/GetInterfaces", GetInterfaces)
   e.POST("/v1/MonitorMode", MonitorMode)
+
+  e.POST("/v1/CreateScann", CreateScann)
+  e.POST("/v1/StopScann", StopScann)
+  e.GET("/v1/GetScannProcess", GetScannProcess)
 
   // Server Starter
   e.Logger.Fatal(e.Start(":3333"))	
