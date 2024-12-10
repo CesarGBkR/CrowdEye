@@ -105,21 +105,36 @@ func PacketCapturer(Network Interfaces.Network, stopChan <-chan struct{}) error 
 
 
   for packet := range packetSource.Packets() {
-    if packet != nil {
-      dot11Layer := packet.Layer(layers.LayerTypeDot11InformationElement)
-      if dot11Layer == nil {
-        continue
-      }
-      // Conver in to *layers.Dot11InformationElement
-      dot11info, ok := dot11Layer.(*layers.Dot11InformationElement)
-      if !ok {
-          continue
-      }
-      if dot11info.ID == layers.Dot11InformationElementIDSSID {
-          fmt.Printf("SSID: %q\n", dot11info.Info)
-      }
+    var Net Interfaces.Network
 
+    if packet != nil {
+      dot11Layer := packet.Layer(layers.LayerTypeDot11)
+      if dot11Layer != nil {
+        dot11, _ := dot11Layer.(*layers.Dot11)
+        Net.Mac = dot11.Address2.String()
+      }
+      dot11InfoLayer := packet.Layer(layers.LayerTypeDot11InformationElement)
+      if dot11InfoLayer != nil {
+          dot11Info, _ := dot11InfoLayer.(*layers.Dot11InformationElement)
+          if dot11Info.ID == layers.Dot11InformationElementIDSSID {
+              Net.Name = string(dot11Info.Info)
+          }
+      }
+      if Net.Name != "" && Net.Mac != "" {
+        Exist := false
+        for _, cNet := range CurrentNetworks {
+          if cNet.Name == Net.Name && cNet.Mac == Net.Mac {
+            Exist = true 
+          }
+        }
+        if Exist == false {
+          Net.State = 1
+          Net.Mode = "AP"
+          CurrentNetworks = append(CurrentNetworks, Net)
+        }
+      }
     }
+    continue
   }
   for {
       select {
@@ -193,6 +208,13 @@ func GetScannProcess() ([]Interfaces.ResScanningInterface, error) {
   return res, err
 }
 
+func GetCurrentNetworks()([]Interfaces.Network, error){
+  if len(CurrentNetworks) < 0 {
+    err := errors.New("No Networks Found")
+    return CurrentNetworks, err
+  }
+  return CurrentNetworks, nil
+}
 
 // TODO
 // func SaveScann(){

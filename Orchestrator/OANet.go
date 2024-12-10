@@ -32,3 +32,8 @@ func GetScannProcess() ([]Interfaces.ResScanningInterface, error) {
   res, err := Controllers.GetScannProcess()
   return res, err
 }
+
+func GetCurrentNetworks() ([]Interfaces.Network, error) {
+  res, err := Controllers.GetCurrentNetworks()
+  return res, err
+}
