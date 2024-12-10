@@ -12,6 +12,12 @@ import (
   "github.com/labstack/echo/v4"
 
 )
+
+func resConstructor(c echo.Context, scode int, res any) error {
+  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+  c.Response().WriteHeader(scode)
+  return json.NewEncoder(c.Response()).Encode(res)
+}
 type TemplateRender struct {
 	templates *template.Template
 }
@@ -27,10 +33,14 @@ func CreateOne(c echo.Context) error {
   var network Interfaces.ONet
 
   if err := c.Bind(&network); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }
-  Orchestrator.CreateOne(network)
-  return c.NoContent(204)
+  if err := Orchestrator.CreateOne(network); err != nil {
+
+    fmt.Printf("\nError:\n%v", err)
+    return resConstructor(c, 500, err)
+  }
+  return resConstructor(c, 204, nil )
 }
 
 func CreateBulk(c echo.Context) error {
@@ -38,120 +48,130 @@ func CreateBulk(c echo.Context) error {
   var networks []Interfaces.ONet
   
   if err := c.Bind(&networks); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }
-  Orchestrator.CreateBulk(networks)
-  	return c.NoContent(204)
+  if err := Orchestrator.CreateBulk(networks); err != nil {
+
+    fmt.Printf("\nError:\n%v", err)
+  	return resConstructor(c, 500, err)
+  }
+  return resConstructor(c, 204, nil)
 }
 
 func ReadOne(c echo.Context) error {
   // network1 := new(Interfaces.ONet)
     // Orchestrator.ReadOne(*network1)
-  	return c.NoContent(204)
+  	return resConstructor(c, 400, nil)
 }
 
 func ReadAll(c echo.Context) error {
   res, err := Orchestrator.ReadAll()
   if err != nil {
-    return c.NoContent(500) 
+    fmt.Printf("\nError:\n%v", err)
+    return resConstructor(c, 500, err)  
   }
-  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-  c.Response().WriteHeader(http.StatusOK)
-  return json.NewEncoder(c.Response()).Encode(res)
+  return resConstructor(c, 200, res) 
 }
 
 func UpdateOne(c echo.Context) error {
   var network Interfaces.ONet
   if err := c.Bind(&network); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }
   Orchestrator.UpdateOne(network)
-  return c.NoContent(204)}
+  return resConstructor(c, 500, nil)}
 
 func UpdateBulk(c echo.Context) error {
   var networks []Interfaces.ONet  
   if err := c.Bind(&networks); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }
   Orchestrator.UpdateBulk(networks)
-  	return c.NoContent(204)
+  	return resConstructor(c, 500, nil)
 }
 
 func DeleteOne(c echo.Context) error {
   network1 := new(Interfaces.ONet)
     Orchestrator.DeleteOne(*network1)
-  	return c.NoContent(204)
+  	return resConstructor(c, 500, nil)
 }
 
 func DeleteBulk(c echo.Context) error {
   var networks []Interfaces.ONet
   if err := c.Bind(&networks); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }  
   Orchestrator.DeleteBulk(networks)
-  return c.NoContent(204)
+  return resConstructor(c, 500, nil)
 }
 
 func GetInterfaces(c echo.Context) error {
 
   res, err := Orchestrator.GetInterfaces() 
   if err != nil {
-    return c.NoContent(500)
+    fmt.Printf("\nError:\n%v", err)
+    return resConstructor(c, 500, err)
   }
-  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-  c.Response().WriteHeader(http.StatusOK)
-  return json.NewEncoder(c.Response()).Encode(res)
+  return resConstructor(c, 200, res)
 }
 
 func MonitorMode(c echo.Context) error {
   var network Interfaces.Network
   if err := c.Bind(&network); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, err)
   }
   res, err := Orchestrator.MonitorMode(network)
   if err != nil {
-    return c.NoContent(500)
+    fmt.Printf("\nError:\n%v", err)
+    return resConstructor(c, 500, err)
   }
-
-  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-  c.Response().WriteHeader(http.StatusOK)
-  return json.NewEncoder(c.Response()).Encode(res)
-
+  return resConstructor(c, 200, res)
 }
 
 func CreateScann(c echo.Context) error {
   var network Interfaces.Network
   if err := c.Bind(&network); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, err)
   }
   if err := Orchestrator.CreateScann(network); err != nil {
-    return c.NoContent(500)
+    fmt.Printf("\nError:\n%v", err)
+    return resConstructor(c, 500, err)
   }
-  return c.NoContent(204)
+  return resConstructor(c, 204, nil)
 }
 
 func StopScann(c echo.Context) error {
   var ScanningInterface Interfaces.ScanningInterface
   if err := c.Bind(&ScanningInterface); err != nil {
-    return c.NoContent(400)
+    return resConstructor(c, 400, nil)
   }
   if err := Orchestrator.StopScann(ScanningInterface); err != nil {
-    return c.NoContent(500)
+    fmt.Printf("\nError:\n%v", err)
   }
-  return c.NoContent(204)
+  return resConstructor(c, 204, nil)
 }
 
 func GetScannProcess(c echo.Context) error {
   res, err := Orchestrator.GetScannProcess()
   if err != nil {
-    fmt.Printf("\n%v\n", err)
-    return c.NoContent(500)
+    fmt.Printf("\nError:\n%v", err)
   }
 
   c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
   c.Response().WriteHeader(http.StatusOK)
   return json.NewEncoder(c.Response()).Encode(res)
 
+}
+
+func GetCurrentNetworks(c echo.Context) error {
+  res, err := Orchestrator.GetCurrentNetworks()
+  if err != nil {
+    fmt.Printf("\nError:\n%v", err)
+  }
+
+  c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+  c.Response().WriteHeader(http.StatusOK)
+  return json.NewEncoder(c.Response()).Encode(res)
 }
 
 func main() {
@@ -192,6 +212,7 @@ func main() {
   e.POST("/v1/StopScann", StopScann)
   e.GET("/v1/GetScannProcess", GetScannProcess)
 
+  e.GET("/v1/GetCurrentNetworks", GetCurrentNetworks)
   // Server Starter
   e.Logger.Fatal(e.Start(":3333"))	
 }
