@@ -18,7 +18,7 @@ import (
 )
 
 var ScannProcess []Interfaces.ScanningInterface 
-
+var CurrentNetworks []Interfaces.Network
 
 func GetInterfaces() ([]Interfaces.Network, error) {
   var Networks []Interfaces.Network
@@ -86,31 +86,48 @@ func MonitorMode(Network Interfaces.Network) (Interfaces.Network, error) {
   return Network, nil
 }
 
-func PackageProcessorSSID(packet gopacket.Packet){
-  if packet != nil {
-    dot11info := packet.Layer(layers.LayerTypeDot11InformationElement)
-    if dot11info != nil {
-      dot11info, _ := dot11info.(*layers.Dot11InformationElement)
+func PacketCapturer(Network Interfaces.Network, stopChan <-chan struct{}) error {
+  // Define time of promiscuous mode
+  wt := time.Duration(5 * float64(time.Second))
+
+  handle, err := pcap.OpenLive(Network.Name, 1024, true, wt)
+  if err != nil {
+    return err
+  }
+
+  defer handle.Close()
+
+  filter := "type mgt subtype beacon or subtype probe-req or subtype probe-resp"// Capture only Beacon packets
+	if err := handle.SetBPFFilter(filter); err != nil {
+		 return err
+	}
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+
+
+  for packet := range packetSource.Packets() {
+    if packet != nil {
+      dot11Layer := packet.Layer(layers.LayerTypeDot11InformationElement)
+      if dot11Layer == nil {
+        continue
+      }
+      // Conver in to *layers.Dot11InformationElement
+      dot11info, ok := dot11Layer.(*layers.Dot11InformationElement)
+      if !ok {
+          continue
+      }
       if dot11info.ID == layers.Dot11InformationElementIDSSID {
-        fmt.Printf("SSID: %q\n", dot11info.Info)
+          fmt.Printf("SSID: %q\n", dot11info.Info)
+      }
+
+    }
+  }
+  for {
+      select {
+      case <- stopChan :
+          fmt.Printf("Capture Stopped.")
+          return nil
       }
     }
-  }
-}
-
-func PacketCapturer(handle *pcap.Handle, stopChan <- chan struct{}){
-  packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-  for {
-    select {
-    case <- stopChan :
-        fmt.Printf("Stopped Capture.")
-        return
-
-    case packet := <-packetSource.Packets():
-      PackageProcessorSSID(packet)
-    }
-    
-  }
 }
 
 func CreateScann(Network Interfaces.Network) (error) {
@@ -125,21 +142,11 @@ func CreateScann(Network Interfaces.Network) (error) {
 
   stopChan := make(chan struct{})
 
-  
-  // Define time of promiscuous mode
-  wt := time.Duration(5 * float64(time.Second))
+  go PacketCapturer(Network, stopChan) 
 
-  
 
-  handle, err := pcap.OpenLive(Network.Name, 1024, true, wt)
-  if err != nil {
-    return err
-  }
-
-  defer handle.Close()
   // Scanning Process Identifyer Constructor
   ScannIdentify := &Interfaces.ScanningInterface{
-
     ID: uuid.New().String(),
     NetName: Network.Name,
     Mac: Network.Mac,
@@ -147,11 +154,8 @@ func CreateScann(Network Interfaces.Network) (error) {
   } 
 
   ScannProcess = append(ScannProcess, *ScannIdentify)
+  return nil 
   
-
-  go PacketCapturer(handle, stopChan)  
-
-  return nil
 }
 
 func StopScann(ScanningInterface Interfaces.ScanningInterface) error {
@@ -188,3 +192,17 @@ func GetScannProcess() ([]Interfaces.ResScanningInterface, error) {
 
   return res, err
 }
+
+
+// TODO
+// func SaveScann(){
+//   writer, err := pcap.OpenOffline("output.pcap")
+//   if err != nil {
+//       log.Fatalf("Error al crear archivo PCAP: %v", err)
+//   }
+//   defer writer.Close()
+//
+//   for packet := range packetSource.Packets() {
+//       writer.WritePacket(packet.Metadata().CaptureInfo, packet.Data())
+//   }
+// }
