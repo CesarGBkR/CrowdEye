@@ -38,7 +38,7 @@ func WSGetInterfacesWriter(){
 
 }
 
-func Foo(){
+func WSBGetInterfaces(){
   for {
     if len(clientsI) > 0 {
       time.Sleep(2 * time.Second)
@@ -71,7 +71,7 @@ func WSGetInterfaces(r *http.Request, w http.ResponseWriter) {
   mutex.Unlock()
   
   if firstClient {
-    go Foo()
+    go WSBGetInterfaces()
     firstClient = false 
   }
 
