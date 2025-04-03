@@ -4,6 +4,9 @@ import (
   "fmt"
   "time"
   "os/exec"
+  "strconv"
+  "slices"
+  "net"
   // "sync"
   "errors"
   "github.com/google/uuid"
@@ -30,11 +33,13 @@ func GetInterfaces() ([]Interfaces.Network, error) {
 
   for _, link := range links {
     attrs := link.Attrs()
-   
+
     Network := &Interfaces.Network {
       Name: attrs.Name,
       Mac: attrs.HardwareAddr.String(), 
       Type: link.Type(),
+      Mode: strconv.Itoa(attrs.Promisc),
+      State: int(attrs.Flags&net.FlagUp),
     } 
     Networks = append(Networks, *Network)
   }
@@ -147,30 +152,38 @@ func PacketCapturer(Network Interfaces.Network, stopChan <-chan struct{}) error 
 
 func CreateScann(Network Interfaces.Network) (error) {
 
-  
-  // Monitor mode validation
-  if Network.Mode != "Monitor" {
-    err := errors.New("Network not in Monitor Mode")
-    fmt.Printf("\n%v\n", err)
-    return err 
+  cInterfaces, err := GetInterfaces() 
+  if err != nil {
+    return err
   }
+  for _, cInterface := range cInterfaces{
+    if cInterface.Mac == Network.Mac{
+      // Monitor mode validation
+      if cInterface.Mode != "Monitor" {
+        err := errors.New("Network not in Monitor Mode")
+        fmt.Printf("\n%v\n", err)
+        return err 
+      }
 
-  stopChan := make(chan struct{})
+      stopChan := make(chan struct{})
 
-  go PacketCapturer(Network, stopChan) 
+      go PacketCapturer(Network, stopChan) 
 
 
-  // Scanning Process Identifyer Constructor
-  ScannIdentify := &Interfaces.ScanningInterface{
-    ID: uuid.New().String(),
-    NetName: Network.Name,
-    Mac: Network.Mac,
-    Chann: stopChan,
-  } 
+      // Scanning Process Identifyer Constructor
+      ScannIdentify := &Interfaces.ScanningInterface{
+        ID: uuid.New().String(),
+        NetName: Network.Name,
+        Mac: Network.Mac,
+        Chann: stopChan,
+      } 
 
-  ScannProcess = append(ScannProcess, *ScannIdentify)
-  return nil 
-  
+      ScannProcess = append(ScannProcess, *ScannIdentify)
+      return nil
+    }
+  }
+  err = errors.New("Interface not found")
+  return err
 }
 
 func StopScann(ScanningInterface Interfaces.ScanningInterface) error {
@@ -179,6 +192,9 @@ func StopScann(ScanningInterface Interfaces.ScanningInterface) error {
     for _, Proc := range ScannProcess {
       if Proc.ID == ScanningInterface.ID {
         close(Proc.Chann)
+        ScannProcess = slices.DeleteFunc(ScannProcess, func(scann Interfaces.ScanningInterface) bool {
+          return scann.ID == Proc.ID
+        }) 
         return nil
       }
     }
